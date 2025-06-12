@@ -1,0 +1,58 @@
+name: ai_one
+description: "A new Flutter project."
+
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.7.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+
+  cupertino_icons: ^1.0.8
+  google_fonts: ^6.2.1
+  lottie: ^3.3.1
+  shared_preferences: ^2.5.3
+  firebase_auth: ^5.5.2
+  firebase_core: ^3.13.0
+  cloud_firestore: ^5.6.6
+  get: ^4.7.2
+  animated_notch_bottom_bar: ^1.0.3
+  flutter_native_splash: ^2.4.6
+  google_nav_bar: ^5.0.7
+  fluttertoast: ^8.2.12
+  intl: ^0.20.2
+  speech_to_text: ^7.0.0
+  file_picker: ^10.1.9
+  file_saver: ^0.2.14
+  flutter_tts: ^4.2.3
+  syncfusion_flutter_pdf: ^29.2.9
+  share_plus: ^11.0.0
+  shimmer: ^3.0.0
+  permission_handler: ^12.0.0+1
+  photo_view: ^0.15.0
+  pdf: ^3.11.3
+  printing: ^5.14.2
+  google_mobile_ads: ^4.0.0
+  url_launcher: ^6.3.1
+  flutter_screenutil: ^5.9.3
+
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+
+flutter:
+
+  uses-material-design: true
+
+
+  assets:
+    - assets/
+    - assets/animation/

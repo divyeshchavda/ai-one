@@ -1,0 +1,24 @@
+flutter_native_splash:
+  # Background color with a gradient to match the dark, cyberpunk theme
+  color: "#0A0E21" # Dark base color matching the login screen
+  background_image: null # No background image (leave as null)
+
+  # Use the provided AIONE logo
+  image: assets/logo.png
+
+  # Enable for both platforms (Android & iOS)
+  android: true
+  ios: true
+
+  # Center the logo on both platforms
+  android_gravity: center
+  ios_content_mode: center
+
+  # Android 12+ specific configuration
+  android_12:
+    image: assets/logo.png
+    icon_background_color: "#0A0E21" # Match the dark theme
+    color: "#0A0E21"
+
+
+

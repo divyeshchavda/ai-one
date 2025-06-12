@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "392611400938",
+    "project_id": "aione-e869b",
+    "storage_bucket": "aione-e869b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:392611400938:android:9377c34e56163c6228db93",
+        "android_client_info": {
+          "package_name": "com.example.ai_one"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "392611400938-p8pu85m8m9vgvecuf8tanfpmnvu9irls.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDEtiguXi7hW8vJPLA-nH88JbfzClcaktI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "392611400938-p8pu85m8m9vgvecuf8tanfpmnvu9irls.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
