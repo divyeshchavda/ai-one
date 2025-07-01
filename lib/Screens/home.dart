@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:startapp_sdk/startapp.dart';
 
 
 import '../ai_module/chat_assistant.dart';
@@ -16,6 +17,7 @@ import '../ai_module/resume_input.dart';
 import '../ai_module/speech_to_text.dart';
 import '../ai_module/templateselectorscreen.dart';
 import '../ai_module/travel_planner.dart';
+import '../services/startappad.dart';
 import '../widgets/banner_ad_widget.dart';
 
 class HomePage extends StatefulWidget {
@@ -27,10 +29,14 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   String username = "";
-
+  var startAppAd = StartAppAdService();
+  final StartAppSdk _sdk = StartAppSdk();
   @override
   void initState() {
     super.initState();
+
+    startAppAd.loadBannerAd();
+    startAppAd.loadNativeAd();
     SharedPreferences.getInstance().then((prefs) {
       setState(() {
         username = prefs.getString("name") ?? "User";
@@ -78,10 +84,10 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(child: Padding(
+              Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: const BannerAdWidget(),
-              )),
+                child: Center(child: startAppAd.getBannerWidget()),
+              ),
               Text(
                 "Hey $username 👋",
                 style: GoogleFonts.poppins(
@@ -171,6 +177,7 @@ class _HomePageState extends State<HomePage> {
                         );
                       },
                     ),
+
                     // _AnimatedToolCard(
                     //   icon: Icons.picture_as_pdf_rounded,
                     //   title: "Resume Builder",
@@ -207,11 +214,12 @@ class _HomePageState extends State<HomePage> {
                     //     );
                     //   },
                     // ),
-
+                    Container(height:500,child: startAppAd.getNativeAdWidget()),
+                    Container(height:500,child: startAppAd.getNativeAdWidget())
                   ],
                 ),
               ),
-              Center(child: const BannerAdWidget()),
+
             ],
           ),
         ),

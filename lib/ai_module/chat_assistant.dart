@@ -86,6 +86,9 @@ class _ChatAssistantScreenState extends State<ChatAssistantScreen> {
       isTyping = true;
     });
 
+    // Smooth scroll animation when sending message
+    _scrollToBottomWithAnimation();
+
     String generatedMessage = await _apiService.getResponseFromApi(userMessage);
     final responseTime = DateTime.now();
 
@@ -95,8 +98,27 @@ class _ChatAssistantScreenState extends State<ChatAssistantScreen> {
       isTyping = false;
     });
 
+    // Removed the scroll animation when receiving response
+    // _scrollToBottomWithAnimation();
+
     await _apiService.saveChatHistory(userEmail, messages);
-    _scrollToBottom();
+  }
+
+  void _scrollToBottomWithAnimation() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: Duration(milliseconds: 500),
+          curve: Curves.easeOutQuart,
+        );
+      }
+    });
+  }
+
+  // Replace the old _scrollToBottom method with the new one
+  void _scrollToBottom() {
+    _scrollToBottomWithAnimation();
   }
 
   String _formatTime(DateTime time) {
@@ -120,18 +142,6 @@ class _ChatAssistantScreenState extends State<ChatAssistantScreen> {
   Future<void> getemail() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     userEmail = prefs.getString('email') ?? '';
-  }
-
-  void _scrollToBottom() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
-    });
   }
 
   void clearHistory() async {
@@ -169,6 +179,55 @@ class _ChatAssistantScreenState extends State<ChatAssistantScreen> {
     );
   }
 
+  Widget _buildMessageText(String text, bool isUser) {
+    if (isUser) {
+      return Text(
+        text,
+        style: GoogleFonts.roboto(
+          fontSize: 16,
+          color: Colors.white,
+          height: 1.4,
+          letterSpacing: 0.2,
+        ),
+      );
+    }
+
+    // Split text by ** markers
+    List<String> parts = text.split('**');
+    List<TextSpan> textSpans = [];
+
+    for (int i = 0; i < parts.length; i++) {
+      if (i % 2 == 0) {
+        // Regular text
+        textSpans.add(TextSpan(
+          text: parts[i],
+          style: GoogleFonts.roboto(
+            fontSize: 16,
+            color: Colors.white,
+            height: 1.4,
+            letterSpacing: 0.2,
+          ),
+        ));
+      } else {
+        // Bold text
+        textSpans.add(TextSpan(
+          text: parts[i],
+          style: GoogleFonts.roboto(
+            fontSize: 16,
+            color: Colors.white,
+            height: 1.4,
+            letterSpacing: 0.2,
+            fontWeight: FontWeight.bold,
+          ),
+        ));
+      }
+    }
+
+    return RichText(
+      text: TextSpan(children: textSpans),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     List<int> visibleIndexes = List.generate(messages.length, (i) {
@@ -181,30 +240,62 @@ class _ChatAssistantScreenState extends State<ChatAssistantScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
+        elevation: 0,
         iconTheme: IconThemeData(color: Colors.white),
         title: AnimatedSwitcher(
           duration: Duration(milliseconds: 500),
-          child: Text("Chat Assistant", key: ValueKey(filter), style: GoogleFonts.poppins(color: Colors.white, fontSize: 20.sp, fontWeight: FontWeight.w600)),
+          child: Text(
+            "Chat Assistant",
+            key: ValueKey(filter),
+            style: GoogleFonts.poppins(
+              color: Colors.white,
+              fontSize: 22.sp,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+              shadows: [
+                Shadow(
+                  color: Color(0xFF00E5FF).withOpacity(0.3),
+                  blurRadius: 10,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+          ),
         ),
-        backgroundColor: Colors.white12,
+        backgroundColor: Colors.transparent,
         actions: [
-          DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              dropdownColor: Colors.black87,
-              value: filter,
-              style: GoogleFonts.roboto(color: Colors.white),
-              icon: Icon(Icons.filter_list, color: Colors.white),
-              items: ["All", "You", "Assistant"].map((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value == "You" ? "Only You" : value == "Assistant" ? "Only Assistant" : "All"),
-                );
-              }).toList(),
-              onChanged: (val) => setState(() => filter = val!),
+          Container(
+            margin: EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.1),
+                width: 1,
+              ),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                dropdownColor: Color(0xFF1E1E1E),
+                value: filter,
+                style: GoogleFonts.roboto(color: Colors.white),
+                icon: Icon(Icons.filter_list, color: Colors.white),
+                padding: EdgeInsets.symmetric(horizontal: 12),
+                items: ["All", "You", "Assistant"].map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(
+                      value == "You" ? "Only You" : value == "Assistant" ? "Only Assistant" : "All",
+                      style: GoogleFonts.roboto(fontSize: 14.sp),
+                    ),
+                  );
+                }).toList(),
+                onChanged: (val) => setState(() => filter = val!),
+              ),
             ),
           ),
           IconButton(
-            icon: Icon(Icons.delete_forever, color: Colors.white),
+            icon: Icon(Icons.delete_forever, color: Colors.white70),
             onPressed: clearHistory,
           ),
         ],
@@ -214,6 +305,27 @@ class _ChatAssistantScreenState extends State<ChatAssistantScreen> {
           onTap: () => FocusScope.of(context).unfocus(),
           child: Stack(
             children: [
+              // Animated background
+              AnimatedContainer(
+                duration: Duration(milliseconds: 500),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0xFF1A1A1A).withOpacity(0.5),
+                      Color(0xFF121212),
+                    ],
+                  ),
+                ),
+                child: CustomPaint(
+                  painter: GridPainter(
+                    color: Colors.white.withOpacity(0.03),
+                    lineWidth: 1,
+                    spacing: 30,
+                  ),
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
                 child: Column(
@@ -229,6 +341,8 @@ class _ChatAssistantScreenState extends State<ChatAssistantScreen> {
 
                           int index = visibleIndexes[i];
                           bool isUser = messages[index].startsWith("You:");
+                          String messageText = messages[index].substring(isUser ? 4 : 10); // Remove "You: " or "Assistant: "
+
                           return AnimatedContainer(
                             duration: Duration(milliseconds: 300),
                             curve: Curves.easeInOut,
@@ -240,33 +354,58 @@ class _ChatAssistantScreenState extends State<ChatAssistantScreen> {
                                   SnackBar(
                                     content: Text("Copied to clipboard", style: GoogleFonts.roboto()),
                                     backgroundColor: Colors.grey[800],
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    margin: EdgeInsets.all(8),
                                   ),
                                 );
                               },
                               child: Container(
                                 margin: const EdgeInsets.symmetric(vertical: 6),
-                                padding: const EdgeInsets.all(14),
+                                padding: const EdgeInsets.all(16),
                                 constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
                                 decoration: BoxDecoration(
                                   color: isUser ? Color(0xFF2E2E2E) : Color(0xFF1A1A1A),
                                   borderRadius: BorderRadius.only(
-                                    topLeft: Radius.circular(16),
-                                    topRight: Radius.circular(16),
-                                    bottomLeft: Radius.circular(isUser ? 16 : 0),
-                                    bottomRight: Radius.circular(isUser ? 0 : 16),
+                                    topLeft: Radius.circular(24),
+                                    topRight: Radius.circular(24),
+                                    bottomLeft: Radius.circular(isUser ? 24 : 4),
+                                    bottomRight: Radius.circular(isUser ? 4 : 24),
                                   ),
-                                  boxShadow: [BoxShadow(color: Colors.black45, blurRadius: 6)],
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: (isUser ? Color(0xFF00E5FF) : Color(0xFFF2007D)).withOpacity(0.15),
+                                      blurRadius: 12,
+                                      offset: Offset(0, 4),
+                                    ),
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 4,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
+                                  border: Border.all(
+                                    color: (isUser ? Color(0xFF00E5FF) : Color(0xFFF2007D)).withOpacity(0.1),
+                                    width: 1,
+                                  ),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(messages[index], style: GoogleFonts.roboto(fontSize: 16, color: Colors.white)),
-                                    SizedBox(height: 6),
+                                    _buildMessageText(
+                                      isUser ? "You: $messageText" : "Assistant: $messageText",
+                                      isUser,
+                                    ),
+                                    SizedBox(height: 8),
                                     Align(
                                       alignment: Alignment.bottomRight,
                                       child: Text(
                                         timestamps.length > index ? timestamps[index] : "",
-                                        style: GoogleFonts.roboto(fontSize: 12, color: Colors.white38),
+                                        style: GoogleFonts.roboto(
+                                          fontSize: 12,
+                                          color: Colors.white38,
+                                          letterSpacing: 0.5,
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -285,11 +424,37 @@ class _ChatAssistantScreenState extends State<ChatAssistantScreen> {
               Positioned(
                 bottom: 90,
                 right: 16,
-                child: FloatingActionButton(
-                  mini: true,
-                  backgroundColor: Colors.black54,
-                  onPressed: _scrollToBottom,
-                  child: Icon(Icons.arrow_downward, color: Colors.white),
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF00E5FF), Color(0xFF00C6FF)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color(0xFF00E5FF).withOpacity(0.3),
+                        blurRadius: 8,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: _scrollToBottom,
+                      customBorder: CircleBorder(),
+                      child: Padding(
+                        padding: EdgeInsets.all(12),
+                        child: Icon(
+                          Icons.arrow_downward,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
 
@@ -298,18 +463,39 @@ class _ChatAssistantScreenState extends State<ChatAssistantScreen> {
                 alignment: Alignment.bottomCenter,
                 child: Container(
                   padding: EdgeInsets.all(12),
-                  color: const Color(0xFF121212),
+                  decoration: BoxDecoration(
+                    color: Color(0xFF1A1A1A),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 10,
+                        offset: Offset(0, -5),
+                      ),
+                    ],
+                  ),
                   child: Row(
                     children: [
                       Expanded(
                         child: AnimatedContainer(
                           duration: Duration(milliseconds: 300),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF333333),
-                            borderRadius: BorderRadius.circular(16),
+                            color: const Color(0xFF2E2E2E),
+                            borderRadius: BorderRadius.circular(24),
                             boxShadow: _controller.text.isNotEmpty
-                                ? [BoxShadow(color: Color(0xFF00E5FF).withOpacity(0.5), blurRadius: 8)]
+                                ? [
+                              BoxShadow(
+                                color: Color(0xFF00E5FF).withOpacity(0.3),
+                                blurRadius: 12,
+                                spreadRadius: 1,
+                              ),
+                            ]
                                 : [],
+                            border: Border.all(
+                              color: _controller.text.isNotEmpty
+                                  ? Color(0xFF00E5FF).withOpacity(0.3)
+                                  : Colors.transparent,
+                              width: 1,
+                            ),
                           ),
                           child: TextField(
                             controller: _controller,
@@ -317,44 +503,75 @@ class _ChatAssistantScreenState extends State<ChatAssistantScreen> {
                             onSubmitted: (_) => sendMessage(),
                             decoration: InputDecoration(
                               hintText: "Ask something...",
-                              hintStyle: GoogleFonts.roboto(color: Colors.white54),
+                              hintStyle: GoogleFonts.roboto(
+                                color: Colors.white54,
+                                fontSize: 15.sp,
+                              ),
                               border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                             ),
-                            style: GoogleFonts.poppins(color: Colors.white),
+                            style: GoogleFonts.poppins(
+                              color: Colors.white,
+                              fontSize: 15.sp,
+                            ),
                           ),
                         ),
                       ),
-                      SizedBox(width: 8),
+                      SizedBox(width: 12),
                       AnimatedScale(
                         scale: _controller.text.trim().isNotEmpty ? 1.0 : 0.0,
                         duration: Duration(milliseconds: 200),
                         child: GestureDetector(
                           onTap: sendMessage,
                           child: Container(
-                            padding: EdgeInsets.all(12),
+                            padding: EdgeInsets.all(14),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               gradient: LinearGradient(
                                 colors: [Color(0xFF00E5FF), Color(0xFF00C6FF)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Color(0xFF00E5FF).withOpacity(0.3),
+                                  blurRadius: 8,
+                                  spreadRadius: 1,
+                                ),
+                              ],
                             ),
-                            child: Icon(Icons.send, color: Colors.white),
+                            child: Icon(Icons.send, color: Colors.white, size: 20),
                           ),
                         ),
                       ),
                       if (_controller.text.trim().isEmpty) ...[
+                        SizedBox(width: 12),
                         GestureDetector(
                           onTap: _listen,
                           child: Container(
-                            padding: EdgeInsets.all(12),
+                            padding: EdgeInsets.all(14),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               gradient: LinearGradient(
-                                colors: _isListening?[Color(0xFFF2007D), Color(0xFFC24297)]:[Color(0xFF00E5FF), Color(0xFF00C6FF)],
+                                colors: _isListening
+                                    ? [Color(0xFFF2007D), Color(0xFFC24297)]
+                                    : [Color(0xFF00E5FF), Color(0xFF00C6FF)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: (_isListening ? Color(0xFFF2007D) : Color(0xFF00E5FF)).withOpacity(0.3),
+                                  blurRadius: 8,
+                                  spreadRadius: 1,
+                                ),
+                              ],
                             ),
-                            child: Icon(_isListening?Icons.mic_off:Icons.mic, color: Colors.white),
+                            child: Icon(
+                              _isListening ? Icons.mic_off : Icons.mic,
+                              color: Colors.white,
+                              size: 20,
+                            ),
                           ),
                         ),
                       ]
@@ -369,23 +586,73 @@ class _ChatAssistantScreenState extends State<ChatAssistantScreen> {
     );
   }
 
-
   Widget _buildTypingIndicator() {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFF1E1E1E),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0xFFF2007D).withOpacity(0.1),
+            blurRadius: 8,
+            offset: Offset(0, 4),
+          ),
+        ],
+        border: Border.all(
+          color: Color(0xFFF2007D).withOpacity(0.1),
+          width: 1,
+        ),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text("Assistant is typing", style: GoogleFonts.roboto(color: Colors.white54)),
+          Text(
+            "Assistant is typing",
+            style: GoogleFonts.roboto(
+              color: Colors.white70,
+              fontSize: 14.sp,
+              letterSpacing: 0.5,
+            ),
+          ),
+          SizedBox(width: 8),
           AnimatedDots(),
         ],
       ),
     );
   }
+}
+
+class GridPainter extends CustomPainter {
+  final Color color;
+  final double lineWidth;
+  final double spacing;
+
+  GridPainter({
+    required this.color,
+    required this.lineWidth,
+    required this.spacing,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = lineWidth
+      ..style = PaintingStyle.stroke;
+
+    for (var i = 0.0; i < size.width; i += spacing) {
+      canvas.drawLine(Offset(i, 0), Offset(i, size.height), paint);
+    }
+
+    for (var i = 0.0; i < size.height; i += spacing) {
+      canvas.drawLine(Offset(0, i), Offset(size.width, i), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
 
 class AnimatedDots extends StatefulWidget {
@@ -400,7 +667,10 @@ class _AnimatedDotsState extends State<AnimatedDots> with SingleTickerProviderSt
 
   @override
   void initState() {
-    _controller = AnimationController(duration: Duration(milliseconds: 1000), vsync: this)..repeat();
+    _controller = AnimationController(
+      duration: Duration(milliseconds: 1000),
+      vsync: this,
+    )..repeat();
     _animation = Tween<double>(begin: 0, end: dotCount.toDouble()).animate(_controller);
     super.initState();
   }
@@ -419,11 +689,19 @@ class _AnimatedDotsState extends State<AnimatedDots> with SingleTickerProviderSt
         int count = (_animation.value).floor();
         return Row(
           children: List.generate(dotCount, (i) {
-            return Opacity(
+            return AnimatedOpacity(
               opacity: i <= count ? 1 : 0.2,
+              duration: Duration(milliseconds: 200),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 2),
-                child: Text(".", style: TextStyle(color: Colors.white54, fontSize: 18)),
+                child: Text(
+                  ".",
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             );
           }),

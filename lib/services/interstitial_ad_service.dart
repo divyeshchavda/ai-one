@@ -8,17 +8,16 @@ class InterstitialAdService {
   factory InterstitialAdService() => _instance;
   InterstitialAdService._internal();
 
-  InterstitialAd? _interstitialAd;
   bool _isAdLoaded = false;
   Timer? _timer;
   DateTime? _lastAdShownTime;
   static const int _adIntervalMinutes = 15;
-  
+
+  InterstitialAd? _interstitialAd;
   // Test video ad unit ID - replace with your actual video ad unit ID in production
   String _adUnitId = /*'ca-app-pub-3940256099942544/8691691433'*/ "ca-app-pub-5796676596026685/3399724308"; // Test video ad unit ID
 
   Future<void> initialize() async {
-    await MobileAds.instance.initialize();
     _loadAd();
     _startTimer();
     _loadLastAdShownTime();
@@ -41,7 +40,6 @@ class InterstitialAdService {
   void _startTimer() {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(minutes: 1), (timer) {
-      print("adad");
       _checkAndShowAd();
     });
   }
@@ -51,17 +49,26 @@ class InterstitialAdService {
       adUnitId: _adUnitId,
       request: const AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
-        onAdLoaded: (ad) {
+        onAdLoaded: (InterstitialAd ad) {
           _interstitialAd = ad;
           _isAdLoaded = true;
-          _setupFullScreenCallback();
-
+          _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+            onAdDismissedFullScreenContent: (InterstitialAd ad) {
+              _isAdLoaded = false;
+              ad.dispose();
+              _loadAd(); // Load the next ad
+            },
+            onAdFailedToShowFullScreenContent: (InterstitialAd ad, AdError error) {
+              debugPrint('Failed to show interstitial video ad: ${error.message}');
+              _isAdLoaded = false;
+              ad.dispose();
+              _loadAd(); // Try to load another ad
+            },
+          );
         },
-        onAdFailedToLoad: (error) {
+        onAdFailedToLoad: (LoadAdError error) {
           debugPrint('Interstitial video ad failed to load: ${error.message}');
           _isAdLoaded = false;
-          _interstitialAd = null;
-
           // Retry loading after a delay
           Future.delayed(const Duration(minutes: 1), _loadAd);
         },
@@ -69,35 +76,8 @@ class InterstitialAdService {
     );
   }
 
-  void _setupFullScreenCallback() {
-    _interstitialAd?.fullScreenContentCallback = FullScreenContentCallback(
-      onAdShowedFullScreenContent: (ad) {
-        debugPrint('Interstitial video ad showed full screen content.');
-
-      },
-      onAdDismissedFullScreenContent: (ad) {
-        debugPrint('Interstitial video ad dismissed full screen content.');
-
-        ad.dispose();
-        _isAdLoaded = false;
-        _loadAd(); // Load the next ad
-      },
-      onAdFailedToShowFullScreenContent: (ad, error) {
-        debugPrint('Failed to show interstitial video ad: ${error.message}');
-
-        ad.dispose();
-        _isAdLoaded = false;
-        _loadAd(); // Try to load another ad
-      },
-      onAdImpression: (ad) {
-        debugPrint('Interstitial video ad impression recorded.');
-
-      },
-    );
-  }
-
   void _checkAndShowAd() {
-    if (!_isAdLoaded || _interstitialAd == null) return;
+    if (!_isAdLoaded) return;
 
     final now = DateTime.now();
     if (_lastAdShownTime == null ||
@@ -109,7 +89,7 @@ class InterstitialAdService {
   void _showAd() {
     if (!_isAdLoaded || _interstitialAd == null) return;
 
-    _interstitialAd?.show();
+    _interstitialAd!.show();
     _saveLastAdShownTime();
   }
 
@@ -121,11 +101,6 @@ class InterstitialAdService {
   // Method to manually show ad (can be used for testing)
   void showAdManually() {
     _showAd();
-  }
-
-  // Update ad unit ID for production
-  void setAdUnitId(String adUnitId) {
-    _adUnitId = adUnitId;
   }
 
   // Check if an ad is currently loaded

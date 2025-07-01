@@ -9,7 +9,9 @@ import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:startapp_sdk/startapp.dart';
 
+import '../services/startappad.dart';
 import '../widgets/banner_ad_widget.dart';
 
 class VoiceToTextHelperScreen extends StatefulWidget {
@@ -48,10 +50,13 @@ class _VoiceToTextHelperScreenState extends State<VoiceToTextHelperScreen>
     const Color(0xFFFF9100), // Orange
     const Color(0xFFFF4081), // Pink
   ];
-
+  var startAppAd = StartAppAdService();
+  final StartAppSdk _sdk = StartAppSdk();
   @override
   void initState() {
     super.initState();
+    // _sdk.setTestAdsEnabled(true);
+    startAppAd.loadBannerAd();
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 150),
@@ -375,7 +380,7 @@ class _VoiceToTextHelperScreenState extends State<VoiceToTextHelperScreen>
             children: [
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: const BannerAdWidget(),
+                child: startAppAd.getBannerWidget(),
               ),
               Text(
                 'Speak and Convert 🎤➡️🗣️',
@@ -410,8 +415,8 @@ class _VoiceToTextHelperScreenState extends State<VoiceToTextHelperScreen>
               SizedBox(height: 50.h),
               _buildClearCopyButtons(textColor, shadowColors[0]),
               Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: const BannerAdWidget(),
+                padding: const EdgeInsets.all(8.0),
+                child: startAppAd.getBannerWidget(),
               ),
             ],
           ),

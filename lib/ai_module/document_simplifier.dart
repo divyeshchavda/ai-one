@@ -5,9 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:startapp_sdk/startapp.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 import 'package:flutter/services.dart'; // NEW UI ADDITION
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../services/startappad.dart';
 import '../widgets/banner_ad_widget.dart';
 import 'api.dart';
 
@@ -26,14 +28,29 @@ class _DocumentSimplifierScreenState extends State<DocumentSimplifierScreen> wit
   final FlutterTts _flutterTts = FlutterTts();
   bool _isDarkMode = true; // NEW UI ADDITION
 
-  final List<String> _languages = ['English', 'Spanish', 'French', 'German'];
+  final List<String> _languages = ['English', 'Spanish', 'French', 'German','Gujarati','Hindi'];
   final List<Color> shadowColors = [
     const Color(0xFF00E5FF),
     const Color(0xFF7C4DFF),
     const Color(0xFFFF9100),
     const Color(0xFFFF4081),
   ];
-
+  var startAppAd = StartAppAdService();
+  final StartAppSdk _sdk = StartAppSdk();
+  @override
+  void initState() {
+    super.initState();
+    // _sdk.setTestAdsEnabled(true);
+    startAppAd.loadBannerAd();
+    startAppAd.loadRewardedAd(onReward: (){
+      print("Reward");
+    }).timeout(Duration(seconds: 5),onTimeout: (){
+      print("TIMEOUT CANT LOAD AD");
+    });
+    startAppAd.loadInterstitialAd().timeout(Duration(seconds: 5),onTimeout: (){
+      print("TIMEOUT CANT LOAD AD");
+    });
+  }
   Future<void> _handleSimplification() async {
     final input = _textController.text.trim();
     if (input.isEmpty) return;
@@ -45,6 +62,15 @@ class _DocumentSimplifierScreenState extends State<DocumentSimplifierScreen> wit
 
     try {
       final simplified = await ApiService.getSimplifiedDocument(input, language: _selectedLanguage);
+      startAppAd.showRewardedAd();
+      startAppAd.loadRewardedAd(onReward: (){
+        print("Reward");
+      }).timeout(Duration(seconds: 5),onTimeout: (){
+        print("TIMEOUT CANT LOAD AD");
+      });
+      startAppAd.loadInterstitialAd().timeout(Duration(seconds: 5),onTimeout: (){
+        print("TIMEOUT CANT LOAD AD");
+      });
       setState(() {
         _simplifiedText = simplified;
       });
@@ -131,16 +157,29 @@ class _DocumentSimplifierScreenState extends State<DocumentSimplifierScreen> wit
       backgroundColor: _isDarkMode ? const Color(0xFF121212) : Colors.white,
       appBar: AppBar(
         iconTheme: IconThemeData(color: _isDarkMode ? Colors.white : Colors.black),
-        title: Text(
-          "Document Simplifier",
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.w600,
-            fontSize: 20.sp,
-            color: _isDarkMode ? Colors.white : Colors.black,
+        title: ShaderMask(
+          shaderCallback: (bounds) => LinearGradient(
+            colors: [
+              _isDarkMode ? Colors.white : Colors.black,
+              _isDarkMode ? Colors.white70 : Colors.black87,
+              shadowColors[1],
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ).createShader(bounds),
+          child: Text(
+              "Document Simplifier",
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w700,
+                fontSize: 22.sp,
+                color: _isDarkMode ? Colors.white : Colors.black,
+                letterSpacing: 1,
+              )
           ),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        centerTitle: true,
         actions: [
           IconButton(
             icon: Icon(Icons.refresh, size: 24.sp),
@@ -151,14 +190,21 @@ class _DocumentSimplifierScreenState extends State<DocumentSimplifierScreen> wit
       ),
       body: Stack(
         children: [
+
           Positioned.fill(
             child: IgnorePointer(
-              child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 500),
-                opacity: 0.05,
-                child: Image.asset(
-                  'assets/particles_bg.png',
-                  fit: BoxFit.cover,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      (_isDarkMode ? const Color(0xFF121212) : Colors.white).withOpacity(0.3),
+                      (_isDarkMode ? const Color(0xFF121212) : Colors.white).withOpacity(0.5),
+                    ],
+                    stops: const [0.0, 0.5, 1.0],
+                  ),
                 ),
               ),
             ),
@@ -170,14 +216,28 @@ class _DocumentSimplifierScreenState extends State<DocumentSimplifierScreen> wit
                 children: [
                   Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: const BannerAdWidget(),
+                    child: startAppAd.getBannerWidget(),
                   ),
-                  Text(
-                    "Simplify Your Documents 🧾",
-                    style: GoogleFonts.poppins(
-                      fontSize: 28.sp,
-                      color: _isDarkMode ? Colors.white : Colors.black,
-                      fontWeight: FontWeight.w600,
+                  // Title with enhanced gradient
+                  ShaderMask(
+                    shaderCallback: (bounds) => LinearGradient(
+                      colors: [
+                        _isDarkMode ? Colors.white : Colors.black,
+                        _isDarkMode ? Colors.white70 : Colors.black87,
+                        shadowColors[1],
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ).createShader(bounds),
+                    child: Text(
+                      "Simplify Your Documents 🧾",
+                      style: GoogleFonts.poppins(
+                        fontSize: 32.sp,
+                        color: _isDarkMode ? Colors.white : Colors.black,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                        height: 1.2,
+                      ),
                     ),
                   ),
                   SizedBox(height: 6.h),
@@ -186,47 +246,133 @@ class _DocumentSimplifierScreenState extends State<DocumentSimplifierScreen> wit
                     style: GoogleFonts.roboto(
                       fontSize: 16.sp,
                       color: _isDarkMode ? Colors.white70 : Colors.black54,
+                      height: 1.4,
+                      letterSpacing: 0.2,
                     ),
                   ),
                   SizedBox(height: 20.h),
-                  DropdownButtonFormField<String>(
-                    dropdownColor: const Color(0xFF1E1E1E),
-                    value: _selectedLanguage,
-                    items: _languages.map((lang) => DropdownMenuItem(
-                      value: lang,
-                      child: Text(
-                        lang,
-                        style: GoogleFonts.poppins(
-                          color: Colors.white,
-                          fontSize: 16.sp,
-                        ),
-                      ),
-                    )).toList(),
-                    onChanged: (value) => setState(() => _selectedLanguage = value!),
-                    decoration: customInputDecoration("Select Language", shadowColors[1]),
-                  ),
+                  _buildLanguageSelector(),
                   SizedBox(height: 20.h),
                   _buildInputCard(),
                   SizedBox(height: 16.h),
-                  _buildActionButton("Pick Document", _pickFile, shadowColors[1]),
+                  _buildActionButton(
+                    "Pick Document",
+                    _pickFile,
+                    shadowColors[1],
+                    icon: Icons.upload_file,
+                  ),
                   SizedBox(height: 14.h),
-                  _buildActionButton("Simplify Text", _handleSimplification, shadowColors[2]),
+                  _buildActionButton(
+                    "Simplify Text",
+                    _handleSimplification,
+                    shadowColors[2],
+                    icon: Icons.auto_fix_high,
+                  ),
                   if (_isLoading)
                     Padding(
                       padding: EdgeInsets.only(top: 20.h),
-                      child: Center(child: CircularProgressIndicator()),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            SizedBox(
+                              width: 40.w,
+                              height: 40.h,
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(shadowColors[2]),
+                                strokeWidth: 3,
+                              ),
+                            ),
+                            SizedBox(height: 16.h),
+                            Text(
+                              "Simplifying your document...",
+                              style: GoogleFonts.poppins(
+                                color: _isDarkMode ? Colors.white70 : Colors.black54,
+                                fontSize: 14.sp,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   SizedBox(height: 20.h),
                   if (_simplifiedText.isNotEmpty) _buildResultCard(_simplifiedText),
                   Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: const BannerAdWidget(),
+                    child: startAppAd.getBannerWidget(),
                   ),
                 ],
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLanguageSelector() {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1E1E),
+        borderRadius: BorderRadius.circular(20.r),
+        boxShadow: [
+          BoxShadow(
+            color: shadowColors[1].withOpacity(0.4),
+            blurRadius: 12.r,
+            offset: Offset(0, 6.h),
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4.r,
+            offset: Offset(0, 2.h),
+          ),
+        ],
+        border: Border.all(
+          color: shadowColors[1].withOpacity(0.1),
+          width: 1,
+        ),
+      ),
+      child: DropdownButtonFormField<String>(
+        dropdownColor: const Color(0xFF1E1E1E),
+        value: _selectedLanguage,
+        items: _languages.map((lang) => DropdownMenuItem(
+          value: lang,
+          child: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(8.w),
+                margin: EdgeInsets.only(right: 12.w),
+                decoration: BoxDecoration(
+                  color: shadowColors[1].withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                child: Icon(Icons.language, color: shadowColors[1], size: 20.sp),
+              ),
+              Text(
+                lang,
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontSize: 16.sp,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ],
+          ),
+        )).toList(),
+        onChanged: (value) => setState(() => _selectedLanguage = value!),
+        decoration: InputDecoration(
+          labelText: "Select Language",
+          labelStyle: GoogleFonts.poppins(
+            color: Colors.white70,
+            fontWeight: FontWeight.w600,
+            fontSize: 15.sp,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20.r),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+        ),
       ),
     );
   }
@@ -244,7 +390,16 @@ class _DocumentSimplifierScreenState extends State<DocumentSimplifierScreen> wit
             blurRadius: 12.r,
             offset: Offset(0, 6.h),
           ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4.r,
+            offset: Offset(0, 2.h),
+          ),
         ],
+        border: Border.all(
+          color: shadowColors[0].withOpacity(0.1),
+          width: 1,
+        ),
       ),
       child: TextField(
         controller: _textController,
@@ -252,20 +407,55 @@ class _DocumentSimplifierScreenState extends State<DocumentSimplifierScreen> wit
         style: GoogleFonts.poppins(
           color: Colors.white,
           fontSize: 16.sp,
+          letterSpacing: 0.3,
         ),
-        decoration: customInputDecoration("Paste or upload document text", shadowColors[0]),
+        decoration: InputDecoration(
+          labelText: "Paste or upload document text",
+          labelStyle: GoogleFonts.poppins(
+            color: Colors.white70,
+            fontWeight: FontWeight.w600,
+            fontSize: 15.sp,
+          ),
+          prefixIcon: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Container(
+              padding: EdgeInsets.all(12.w),
+              margin: EdgeInsets.only(right: 8.w),
+              decoration: BoxDecoration(
+                color: shadowColors[0].withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+              child: Icon(Icons.description, color: shadowColors[0], size: 20.sp),
+            ),
+          ),
+          filled: true,
+          fillColor: const Color(0xFF1E1E1E),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20.r),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20.r),
+            borderSide: BorderSide(color: shadowColors[0], width: 2.5),
+          ),
+          contentPadding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+        ),
       ),
     );
   }
 
-  Widget _buildActionButton(String label, VoidCallback onTap, Color shadowColor) {
+  Widget _buildActionButton(String label, VoidCallback onTap, Color shadowColor, {required IconData icon}) {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
         decoration: BoxDecoration(
-          color: shadowColor,
+          gradient: LinearGradient(
+            colors: [shadowColor, shadowColor.withOpacity(0.8)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           borderRadius: BorderRadius.circular(20.r),
           boxShadow: [
             BoxShadow(
@@ -273,24 +463,66 @@ class _DocumentSimplifierScreenState extends State<DocumentSimplifierScreen> wit
               blurRadius: 12.r,
               offset: Offset(0, 6.h),
             ),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 4.r,
+              offset: Offset(0, 2.h),
+            ),
           ],
         ),
         padding: EdgeInsets.symmetric(vertical: 16.h),
-        child: Center(
-          child: Text(
-            label,
-            style: GoogleFonts.poppins(
-              fontWeight: FontWeight.w600,
-              fontSize: 16.sp,
-              color: Colors.white,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: Colors.white, size: 20.sp),
+            SizedBox(width: 8.w),
+            Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                fontSize: 16.sp,
+                color: Colors.white,
+                letterSpacing: 0.5,
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildResultCard(String result) {
+    // Split text by ** markers
+    List<String> parts = result.split('**');
+    List<TextSpan> textSpans = [];
+
+    for (int i = 0; i < parts.length; i++) {
+      if (i % 2 == 0) {
+        // Regular text
+        textSpans.add(TextSpan(
+          text: parts[i],
+          style: GoogleFonts.poppins(
+            color: Colors.white,
+            fontSize: 16.sp,
+            height: 1.5,
+            letterSpacing: 0.3,
+          ),
+        ));
+      } else {
+        // Bold text
+        textSpans.add(TextSpan(
+          text: parts[i],
+          style: GoogleFonts.poppins(
+            color: Colors.white,
+            fontSize: 16.sp,
+            height: 1.5,
+            letterSpacing: 0.3,
+            fontWeight: FontWeight.bold,
+          ),
+        ));
+      }
+    }
+
     return Padding(
       padding: EdgeInsets.all(8.w),
       child: AnimatedContainer(
@@ -305,33 +537,60 @@ class _DocumentSimplifierScreenState extends State<DocumentSimplifierScreen> wit
               blurRadius: 12.r,
               offset: Offset(0, 6.h),
             ),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 4.r,
+              offset: Offset(0, 2.h),
+            ),
           ],
+          border: Border.all(
+            color: shadowColors[3].withOpacity(0.1),
+            width: 1,
+          ),
         ),
         padding: EdgeInsets.all(16.w),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SelectableText(
-              result,
-              style: GoogleFonts.poppins(
-                color: Colors.white,
-                fontSize: 16.sp,
-                height: 1.5,
-              ),
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(8.w),
+                  decoration: BoxDecoration(
+                    color: shadowColors[3].withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  child: Icon(Icons.auto_fix_high, color: shadowColors[3], size: 20.sp),
+                ),
+                SizedBox(width: 12.w),
+                Text(
+                  "Simplified Text",
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 16.h),
+            SelectableText.rich(
+              TextSpan(children: textSpans),
             ),
             SizedBox(height: 20.h),
             Row(
               children: [
-                _buildMiniButton(Icons.volume_up, _speakResult),
+                _buildMiniButton(Icons.volume_up, _speakResult, shadowColors[0]),
                 SizedBox(width: 12.w),
-                _buildMiniButton(Icons.download, _exportText),
+                _buildMiniButton(Icons.download, _exportText, shadowColors[1]),
                 SizedBox(width: 12.w),
                 _buildMiniButton(Icons.copy, () {
                   Clipboard.setData(ClipboardData(text: result));
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text("Text copied to clipboard")),
                   );
-                }),
+                }, shadowColors[2]),
               ],
             ),
           ],
@@ -340,17 +599,22 @@ class _DocumentSimplifierScreenState extends State<DocumentSimplifierScreen> wit
     );
   }
 
-  Widget _buildMiniButton(IconData icon, VoidCallback onTap) {
+  Widget _buildMiniButton(IconData icon, VoidCallback onTap, Color color) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF292929),
+          gradient: LinearGradient(
+            colors: [color, color.withOpacity(0.8)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           borderRadius: BorderRadius.circular(12.r),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 6.r,
+              color: color.withOpacity(0.3),
+              blurRadius: 8.r,
+              offset: Offset(0, 4.h),
             ),
           ],
         ),

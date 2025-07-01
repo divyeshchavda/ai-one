@@ -252,7 +252,7 @@ Separate the plan by days (Day 1, Day 2, etc.). Use a clean and easy-to-read for
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          "model": "provider-1/deepseek-r1",
+          "model": "provider-5/gpt-4o-2024-08-06",
           "messages": [
             {
               "role": "user",
@@ -294,7 +294,7 @@ Separate the plan by days (Day 1, Day 2, etc.). Use a clean and easy-to-read for
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          "model": "provider-3/deepseek-v3",
+          "model": "provider-5/gpt-4o-2024-08-06",
           "messages": [
             {
               "role": "user",

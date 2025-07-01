@@ -5,6 +5,8 @@ flutter_native_splash:
 
   # Use the provided AIONE logo
   image: assets/logo.png
+  branding: assets/animation/welcome.png
+
 
   # Enable for both platforms (Android & iOS)
   android: true
@@ -19,6 +21,7 @@ flutter_native_splash:
     image: assets/logo.png
     icon_background_color: "#0A0E21" # Match the dark theme
     color: "#0A0E21"
+    branding: assets/animation/welcome.png
 
 
 

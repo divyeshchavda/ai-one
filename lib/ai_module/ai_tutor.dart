@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'api.dart';
@@ -33,14 +32,14 @@ class _AiTutorScreenState extends State<AiTutorScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),  // Dark background
+      backgroundColor: const Color(0xFF121212),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Title Section
+
               Text(
                 "Ask the Tutor",
                 style: GoogleFonts.poppins(
@@ -50,8 +49,7 @@ class _AiTutorScreenState extends State<AiTutorScreen> {
                 ),
               ),
               const SizedBox(height: 60),
-        
-              // TextField for question input
+
               TextField(
                 controller: _questionController,
                 decoration: InputDecoration(
@@ -68,8 +66,7 @@ class _AiTutorScreenState extends State<AiTutorScreen> {
                 maxLines: 3,
               ),
               const SizedBox(height: 16),
-        
-              // Ask the Tutor Button with custom style and colorful shadow
+
               _StyledButton(
                 text: "Ask the Tutor",
                 color: const Color(0xFF00E5FF),
@@ -98,8 +95,7 @@ class _AiTutorScreenState extends State<AiTutorScreen> {
                 ),
               ],
               const SizedBox(height: 24),
-        
-              // Get Learning Material Button with custom style and colorful shadow
+
               _StyledButton(
                 text: "Get Learning Material (${_questionController.text})",
                 color: const Color(0xFF66BB6A),
@@ -111,8 +107,7 @@ class _AiTutorScreenState extends State<AiTutorScreen> {
                 },
               ),
               const SizedBox(height: 24),
-        
-              // Material Section
+
               if (_learningMaterial.isNotEmpty) ...[
                 Text(
                   "Learning Material:",
@@ -127,8 +122,7 @@ class _AiTutorScreenState extends State<AiTutorScreen> {
                 ),
               ],
               const SizedBox(height: 24),
-        
-              // Get Quiz Button with custom style and colorful shadow
+
               _StyledButton(
                 text: "Generate Quiz (${_questionController.text})",
                 color: const Color(0xFFFF7043),
@@ -140,8 +134,7 @@ class _AiTutorScreenState extends State<AiTutorScreen> {
                 },
               ),
               const SizedBox(height: 24),
-        
-              // Quiz Section
+
               if (_quiz.isNotEmpty) ...[
                 Text(
                   "Quiz:",
