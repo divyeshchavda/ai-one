@@ -3,3 +3,4 @@ version = 1
 [[analyzers]]
 name = "dart-analyze"
 type = "community"
+enabled = true
